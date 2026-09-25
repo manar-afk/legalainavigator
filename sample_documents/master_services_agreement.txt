@@ -1,0 +1,120 @@
+MASTER SERVICES AGREEMENT
+
+This Master Services Agreement (this "Agreement") is dated as of January 15, 2024 (the "Effective Date"), by and between:
+ENTERPRISE CLOUD SYSTEMS INC., a Delaware corporation with its principal office at 500 Technology Way, San Francisco, CA 94105 ("Service Provider"), and
+GLOBAL LOGISTICS ENTERPRISES LLC, a New York limited liability company with its principal office at 120 Broadway, New York, NY 10271 ("Customer").
+
+RECITALS
+WHEREAS, Service Provider provides enterprise cloud software infrastructure and professional implementation services; and
+WHEREAS, Customer desires to procure certain services and software subscriptions from Service Provider, as described in one or more Statements of Work ("SOW").
+
+NOW, THEREFORE, the parties agree as follows:
+
+SECTION 1: DEFINITIONS AND INTERPRETATION
+1.1 "Affiliate" means any entity that directly or indirectly controls, is controlled by, or is under common control with a party.
+1.2 "Authorized Users" means Customer's employees and contractors authorized by Customer to access the Services.
+1.3 "Confidential Information" has the meaning set forth in Section 12.1.
+1.4 "Customer Data" means all electronic data or information submitted by or on behalf of Customer to the Service.
+1.5 "Deliverables" means all reports, software configurations, and documents created for Customer under an SOW.
+1.6 "Documentation" means the official user guides, release notes, and technical documentation provided by Service Provider.
+1.7 "Services" means the software-as-a-service offerings and professional consulting services specified in each SOW.
+
+SECTION 2: STATEMENTS OF WORK AND ORDERING
+2.1 Statements of Work: Each SOW executed by the parties shall incorporate the terms and conditions of this Agreement.
+2.2 Conflict of Terms: In the event of an express conflict between the provisions of this Agreement and any SOW, this Agreement shall prevail unless the SOW explicitly identifies the section of this Agreement to be overridden.
+2.3 Change Orders: Any material change in the scope of services must be agreed upon in a written Change Order signed by both parties.
+
+SECTION 3: SERVICE PROVISIONING AND ACCESS RIGHTS
+3.1 Subscription Grant: Service Provider hereby grants Customer a non-exclusive, non-transferable right to access and use the Services during the Term.
+3.2 Service Availability: Service Provider shall use commercially reasonable efforts to maintain a 99.9% Monthly Uptime Percentage, excluding scheduled maintenance.
+3.3 Usage Restrictions: Customer shall not reverse engineer, decompile, or create derivative works based upon the Services.
+
+SECTION 4: CUSTOMER RESPONSIBILITIES AND DATA GOVERNANCE
+4.1 User Credentials: Customer is responsible for maintaining the confidentiality of all login credentials.
+4.2 Acceptable Use: Customer shall not use the Services to transmit malicious code, infringe intellectual property rights, or violate applicable law.
+4.3 Data Accuracy: Customer retains sole responsibility for the accuracy, quality, and legality of all Customer Data.
+
+SECTION 5: INTELLECTUAL PROPERTY RIGHTS
+5.1 Provider IP: Service Provider retains all right, title, and interest in and to the Services, Documentation, and all modifications or improvements thereto.
+5.2 Customer IP: Customer retains all right, title, and interest in and to all Customer Data.
+5.3 Deliverables Ownership: Subject to full payment of applicable fees, Customer shall own the copyright in custom Deliverables created specifically for Customer.
+
+SECTION 6: FEES AND PAYMENT TERMS
+6.1 Subscription Fees: Customer shall pay the subscription and professional services fees set forth in each SOW.
+6.2 Invoicing: Invoices shall be issued monthly in advance for subscription services and monthly in arrears for professional time and materials.
+6.3 Payment Period: All invoices are due and payable within thirty (30) days from the date of invoice.
+6.4 Disputed Invoices: Customer must notify Service Provider in writing of any good-faith disputed amount within fifteen (15) days of receipt.
+
+SECTION 7: TAXES
+7.1 Customer shall be responsible for all sales, use, excise, and value-added taxes, excluding taxes based on Service Provider's net income.
+
+SECTION 8: SERVICE LEVEL AGREEMENTS (SLA)
+8.1 Downtime Credits: If Monthly Uptime falls below 99.5%, Customer shall be entitled to a service credit of 10% of that month's subscription fee.
+8.2 Maximum SLA Credit: In no event shall monthly SLA credits exceed thirty percent (30%) of the monthly subscription fee.
+
+SECTION 9: SECURITY AND COMPLIANCE
+9.1 Security Safeguards: Service Provider shall implement and maintain administrative, physical, and technical safeguards complying with SOC 2 Type II standards.
+9.2 Data Breach Notification: In the event of a confirmed breach affecting Customer Data, Service Provider shall notify Customer within forty-eight (48) hours.
+
+SECTION 10: BACKUPS AND DISASTER RECOVERY
+10.1 Backup Frequency: Service Provider shall perform daily automated database snapshots and maintain offsite geo-redundant replications.
+10.2 Recovery Objectives: The Recovery Point Objective (RPO) shall be no greater than 1 hour; Recovery Time Objective (RTO) shall be no greater than 4 hours.
+
+SECTION 11: PRIVACY AND REGULATORY STANDARDS
+11.1 Data Processing Addendum: The parties agree to comply with the Data Processing Addendum ("DPA") attached hereto as Exhibit A.
+11.2 Cross-Border Transfers: All cross-border transfers of personal data shall adhere to Standard Contractual Clauses (SCCs).
+
+SECTION 12: CONFIDENTIALITY
+12.1 Duty of Care: Each party agrees to protect the Confidential Information of the other with the same degree of care it uses for its own confidential data.
+12.2 Exclusions: Confidential Information does not include information that is publicly known or independently developed without reference to the other party's data.
+
+SECTION 13: WARRANTIES AND REPRESENTATIONS
+13.1 Performance Warranty: Service Provider warrants that the Services will perform materially in accordance with the Documentation.
+13.2 Anti-Virus Warranty: Service Provider warrants that it utilizes industry-standard safeguards to prevent malicious code from infecting Customer systems.
+
+SECTION 14: WARRANTY DISCLAIMERS
+14.1 EXCEPT AS EXPRESSLY PROVIDED HEREIN, ALL SERVICES ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, WHETHER EXPRESS, IMPLIED, OR STATUTORY.
+
+SECTION 15: INDEMNIFICATION BY SERVICE PROVIDER
+15.1 IP Infringement Indemnity: Service Provider shall defend and indemnify Customer against any third-party claim alleging that the Services infringe any patent or copyright.
+
+SECTION 16: INDEMNIFICATION BY CUSTOMER
+16.1 Customer Data Indemnity: Customer shall defend and indemnify Service Provider against any claim arising from Customer Data violating third-party privacy or IP rights.
+
+SECTION 17: INDEMNIFICATION PROCEDURES
+17.1 Notice and Defense: The indemnified party must give prompt written notice of the claim and grant sole control of defense and settlement to the indemnifying party.
+
+SECTION 18: INSURANCE
+18.1 Coverage Requirements: Service Provider shall maintain Commercial General Liability insurance of at least $2,000,000 and Cyber Liability insurance of at least $5,000,000.
+
+SECTION 19: LIMITATION OF LIABILITY
+19.1 Consequential Damages Waiver: NEITHER PARTY SHALL BE LIABLE FOR ANY INDIRECT, INCIDENTAL, CONSEQUENTIAL, SPECIAL, PUNITIVE, OR EXEMPLARY DAMAGES, INCLUDING LOSS OF PROFITS, REVENUE, OR DATA.
+19.2 Exclusions from Limitations: The limitations in this Section 19 shall not apply to either party's gross negligence, willful misconduct, or breach of Section 12 (Confidentiality).
+19.3 Bodily Injury: Nothing in this Agreement shall limit liability for death or bodily injury caused by negligence.
+19.4 Aggregate Liability Cap: Notwithstanding anything to the contrary in this Agreement or any Statement of Work, the total aggregate liability of either party arising out of or related to this Agreement, whether in contract, tort (including negligence), indemnity, or otherwise, shall in no event exceed the total fees paid or payable by Customer to Service Provider under the applicable Statement of Work in the twelve (12) month period immediately preceding the event giving rise to liability.
+
+SECTION 20: TERM AND TERMINATION
+20.1 Term: This Agreement commences on the Effective Date and continues for a term of three (3) years unless terminated earlier.
+20.2 Termination for Cause: Either party may terminate this Agreement immediately if the other party breaches any material term and fails to cure within thirty (30) days of written notice.
+20.3 Termination for Insolvency: Either party may terminate immediately upon the bankruptcy, insolvency, or assignment for the benefit of creditors of the other party.
+
+SECTION 21: POST-TERMINATION AND SURVIVAL
+21.1 Transition Assistance: Upon request within thirty (30) days of termination, Service Provider shall assist Customer in exporting Customer Data in a standard format.
+21.2 Survival: Sections 1, 5, 6, 12, 14, 19, 21, and 22 shall survive termination of this Agreement.
+
+SECTION 22: MISCELLANEOUS
+22.1 Governing Law: This Agreement shall be governed by the laws of the State of California, without regard to conflicts of law principles.
+22.2 Dispute Resolution: Any controversy shall be submitted to binding arbitration in San Francisco, California under the rules of JAMS.
+22.3 Entire Agreement: This Agreement, including exhibits and SOWs, constitutes the entire agreement between the parties and supersedes all prior agreements.
+
+IN WITNESS WHEREOF, the authorized representatives of the parties have executed this Agreement as of the Effective Date.
+
+ENTERPRISE CLOUD SYSTEMS INC.
+By: [Signed]
+Name: Sarah Jenkins
+Title: Chief Operating Officer
+
+GLOBAL LOGISTICS ENTERPRISES LLC
+By: [Signed]
+Name: Michael Chang
+Title: Chief Technology Officer

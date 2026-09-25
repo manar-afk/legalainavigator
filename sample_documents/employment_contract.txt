@@ -1,0 +1,34 @@
+EMPLOYMENT AGREEMENT
+
+This Employment Agreement is entered into on June 1, 2024 between Apex Cloud Solutions Pvt. Ltd., having its registered office in Hyderabad, India (the "Company"), and Vikram Sen, residing in Bengaluru, India ("Employee").
+
+SECTION 1: POSITION AND DUTIES
+1.1 The Employee is appointed to the position of Senior Systems Engineer.
+1.2 The Employee agrees to devote full business time, attention, and energies to the Company's business.
+
+SECTION 2: COMPENSATION AND BENEFITS
+2.1 Base Salary: The Company shall pay the Employee an annual gross base salary of INR 18,00,000, payable in monthly installments subject to statutory deductions.
+2.2 Performance Bonus: The Employee may be eligible for an annual discretionary performance bonus as determined by the Board of Directors.
+
+SECTION 3: CONFIDENTIALITY
+3.1 The Employee agrees not to disclose, publish, or use any Proprietary and Confidential Information of the Company during or following termination of employment, without prior written authorization.
+
+SECTION 11: NON-COMPETITION AND NON-SOLICITATION
+11.1 Non-Solicitation: For a period of twelve (12) months following termination, Employee shall not solicit any employee, customer, or vendor of the Company.
+11.2 Post-Termination Non-Compete: For a period of twenty-four (24) months following the cessation of employment for any reason, the Employee covenants and agrees not to directly or indirectly engage in, perform services for, consult with, or be employed by any enterprise operating in competition with the Company anywhere within the territory of India.
+
+SECTION 12: TERMINATION AND NOTICE
+12.1 Either party may terminate this employment by serving sixty (60) days' written notice, or payment of base salary in lieu thereof.
+12.2 The Company reserves the right to terminate employment immediately for cause (including fraud, gross negligence, or material policy violation) without notice or severance.
+
+SECTION 14: GOVERNING LAW AND JURISDICTION
+14.1 This Agreement shall be governed by and construed under the laws of the Republic of India.
+14.2 The courts at Hyderabad shall have exclusive jurisdiction over disputes arising out of this Agreement.
+
+IN WITNESS WHEREOF, the parties have executed this Agreement.
+
+[Signed]
+For Apex Cloud Solutions Pvt. Ltd.
+
+[Signed]
+Vikram Sen

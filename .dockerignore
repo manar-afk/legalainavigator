@@ -1,0 +1,29 @@
+# Git and VCS
+.git/
+.gitignore
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment files and credentials
+.env
+.env.*
+*.pem
+*.key
+
+# Temporary and development files
+scratch/
+backend/tests/
+node_modules/
+.next/
+frontend/out/
+frontend/.next/
+
+# IDE files
+.vscode/
+.idea/
