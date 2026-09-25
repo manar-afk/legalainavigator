@@ -218,62 +218,31 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-600 rounded-lg text-white shadow-md shadow-indigo-200">
-              <Compass className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                Legal Information Navigator
-                <span className="text-[11px] font-semibold uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                  Product Preview
-                </span>
-              </h1>
-              <p className="text-xs text-slate-500 font-normal">
-                Direct, grounded answers from your agreements and governing law
-              </p>
-            </div>
+    <div className="space-y-8">
+      {/* Workspace Card */}
+      <section className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 px-6 py-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-base font-bold tracking-tight text-white flex items-center gap-2">
+              <FileText className="w-4 h-4 text-indigo-400" />
+              Tell Us What You're Dealing With
+            </h2>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Attach contracts, describe the situation, and ask your question. The navigator coordinates textual analysis, comparisons, and statutory rules automatically.
+            </p>
           </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
-              <span className={`w-2 h-2 rounded-full ${health?.status === 'healthy' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-              <span>{loadingHealth ? 'Connecting...' : health?.status === 'healthy' ? 'System Ready' : 'Service Degraded'}</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleLoadSample('residential_lease_agreement.txt')}
+              disabled={isUploading}
+              className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg border border-white/20 transition flex items-center gap-1.5"
+            >
+              <FileCheck className="w-3.5 h-3.5" />
+              Load Lease Document
+            </button>
           </div>
         </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Workspace Card */}
-        <section className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 px-6 py-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-base font-bold tracking-tight text-white flex items-center gap-2">
-                <FileText className="w-4 h-4 text-indigo-400" />
-                Tell Us What You're Dealing With
-              </h2>
-              <p className="text-xs text-slate-300 mt-0.5">
-                Attach contracts, describe the situation, and ask your question. The navigator coordinates textual analysis, comparisons, and statutory rules automatically.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleLoadSample('residential_lease_agreement.txt')}
-                disabled={isUploading}
-                className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg border border-white/20 transition flex items-center gap-1.5"
-              >
-                <FileCheck className="w-3.5 h-3.5" />
-                Load Sample Lease
-              </button>
-            </div>
-          </div>
 
           <div className="p-6 space-y-6">
             {/* Document Ingestion & Attachment Bar */}
@@ -685,7 +654,7 @@ export default function HomePage() {
               >
                 <div className="flex items-center gap-2">
                   <Activity className="w-4 h-4 text-slate-500" />
-                  <span>Evidence & System Diagnostics (Internal Machinery)</span>
+                  <span>Evidence & System Diagnostics</span>
                 </div>
                 {showDiagnostics ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
@@ -714,14 +683,13 @@ export default function HomePage() {
                   </div>
 
                   <div className="text-[11px] text-slate-500 leading-relaxed pt-2">
-                    <p>Internal execution coordinates document grounding, cross-document comparison diffs, external statutory databases, and situation role inference. Diagnostics are isolated in this drawer to maintain a unified user-facing product boundary.</p>
+                    <p>Telemetry and execution tracing coordinate document grounding, cross-document comparison diffs, external statutory databases, and situation role inference.</p>
                   </div>
                 </div>
               )}
             </div>
           </section>
         )}
-      </main>
 
       {/* Paste Modal */}
       {showPasteModal && (

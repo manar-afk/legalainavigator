@@ -38,16 +38,9 @@ export default function RootLayout({
                   Legal Information Navigator
                 </h1>
                 <p className="text-xs text-slate-500 font-medium">
-                  Situation-Aware & Grounded GenAI Assistant
+                  Direct, grounded answers from your agreements and governing law
                 </p>
               </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-medium border border-emerald-200 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                Production System Active
-              </span>
             </div>
           </div>
         </header>
