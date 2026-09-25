@@ -8,10 +8,20 @@ __pycache__/
 htmlcov/
 *.log
 
-# Environments
+# Environments & Secrets
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pkcs12
+*service_account*.json
+*credentials*.json
+gcp-key.json
+client_secret*.json
+
+# Virtual Environments
 venv/
 env/
 .venv/
