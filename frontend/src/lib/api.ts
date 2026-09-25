@@ -1,6 +1,8 @@
 import { HealthStatus, DocumentMeta, IntentClassification, UserSituation, GroundedAnswer } from './types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== 'undefined' ? '/api' : 'http://localhost:8000/api');
 
 export async function fetchHealth(): Promise<HealthStatus> {
   const res = await fetch(`${API_BASE_URL}/health`);
