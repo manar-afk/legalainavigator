@@ -476,6 +476,69 @@ export default function HomePage() {
             />
           </div>
 
+          {/* Core Legal Capabilities & Quick Actions (Problem Statement Alignment) */}
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+              Core Capabilities & Quick Actions
+            </span>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Quick Action Presets">
+              <button
+                type="button"
+                onClick={() => setQuestionText("Simplify this document in plain English with key takeaways, obligations, and rights.")}
+                className="text-xs bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 transition font-medium flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none shadow-sm"
+                aria-label="Preset: Simplify document in plain English"
+              >
+                <FileText className="w-3.5 h-3.5 text-indigo-600" aria-hidden="true" />
+                <span>Simplify Document</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuestionText("Compare the agreements and highlight all differences, amendments, and inconsistencies.")}
+                className="text-xs bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 transition font-medium flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none shadow-sm"
+                aria-label="Preset: Compare agreements and highlight inconsistencies"
+              >
+                <GitCompare className="w-3.5 h-3.5 text-indigo-600" aria-hidden="true" />
+                <span>Compare Agreements</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuestionText("Highlight the most critical clauses, obligations, financial commitments, and potential risks.")}
+                className="text-xs bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 transition font-medium flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none shadow-sm"
+                aria-label="Preset: Highlight important clauses, obligations, and risks"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
+                <span>Audit Clauses & Risks</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuestionText("What are my viable options and potential next steps in this situation?")}
+                className="text-xs bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 transition font-medium flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none shadow-sm"
+                aria-label="Preset: Understand options and potential next steps"
+              >
+                <Compass className="w-3.5 h-3.5 text-blue-600" aria-hidden="true" />
+                <span>Options & Next Steps</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuestionText("Generate an actionable preparation checklist and deadline tracker.")}
+                className="text-xs bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 transition font-medium flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none shadow-sm"
+                aria-label="Preset: Generate actionable preparation checklist"
+              >
+                <CheckSquare className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+                <span>Action Checklist</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuestionText("Prepare a structured attorney consultation brief and list of questions for counsel.")}
+                className="text-xs bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 transition font-medium flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none shadow-sm"
+                aria-label="Preset: Prepare attorney consultation brief"
+              >
+                <ClipboardList className="w-3.5 h-3.5 text-purple-600" aria-hidden="true" />
+                <span>Prepare for Attorney</span>
+              </button>
+            </div>
+          </div>
+
           {/* Direct Question Input */}
           <div className="space-y-1.5">
             <label htmlFor="question-input" className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -642,6 +705,49 @@ export default function HomePage() {
                       </span>
                     </div>
                     <DocumentComparisonView comparison={navResponse.comparative_analysis} />
+                  </div>
+                )}
+
+                {/* Important Clauses, Obligations & Risks Matrix */}
+                {navResponse.covenants_matrix && navResponse.covenants_matrix.length > 0 && (
+                  <div className="space-y-3 pt-2 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" aria-hidden="true" />
+                        Important Clauses, Obligations & Risks Matrix
+                      </h4>
+                      <span className="text-[11px] font-semibold text-indigo-600">
+                        {navResponse.covenants_matrix.length} Covenants Identified
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {navResponse.covenants_matrix.map((cov, idx) => (
+                        <div key={idx} className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-xs font-bold text-slate-900 leading-snug">{cov.title}</span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 shrink-0 font-medium">
+                              {cov.covenant_type ? cov.covenant_type.replace(/_/g, ' ') : 'Covenant'}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
+                            <span>Party: <strong className="text-slate-800">{cov.obligated_party}</strong></span>
+                            <span>•</span>
+                            <span>Beneficiary: <strong className="text-slate-800">{cov.beneficiary_party}</strong></span>
+                            {cov.associated_deadline && (
+                              <>
+                                <span>•</span>
+                                <span className="text-amber-700 font-medium">Deadline: {cov.associated_deadline}</span>
+                              </>
+                            )}
+                          </div>
+                          {cov.clause_evidence && cov.clause_evidence.exact_quote && (
+                            <p className="text-[11px] font-mono text-slate-700 bg-white p-2 rounded border border-slate-200 italic line-clamp-2">
+                              "{cov.clause_evidence.exact_quote}"
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

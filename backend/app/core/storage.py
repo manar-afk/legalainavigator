@@ -1,23 +1,25 @@
 from typing import Dict, List, Optional
 import threading
+from collections import OrderedDict
 from ..models.document import DocumentMeta, DocumentChunk
 
 
 class InMemoryDocumentStore:
     """
-    Thread-safe in-memory document store.
+    Thread-safe, memory-bounded in-memory document store with LRU eviction.
     Preserves:
       1. Authentic extracted text (raw_texts) without modification.
-      2. Original uploaded file payload (raw_bytes) retained separately for binary integrity and audit.
-      3. Structural section chunks (chunks) preserving exact character/paragraph spans.
+      2. Structural section chunks (chunks) preserving exact character/paragraph spans.
+      3. Bounded memory capacity with automatic LRU eviction to prevent memory exhaustion.
     """
 
-    def __init__(self):
+    def __init__(self, max_capacity: int = 50):
         self._lock = threading.RLock()
-        self._documents: Dict[str, DocumentMeta] = {}
+        self._max_capacity = max_capacity
+        self._documents: OrderedDict[str, DocumentMeta] = OrderedDict()
         self._chunks: Dict[str, List[DocumentChunk]] = {}  # doc_id -> chunks
         self._raw_texts: Dict[str, str] = {}              # doc_id -> full authentic extracted text
-        self._raw_bytes: Dict[str, bytes] = {}            # doc_id -> original uploaded binary payload
+        self._raw_bytes: Dict[str, bytes] = {}            # doc_id -> original uploaded binary payload (bounded)
 
     def add_document(
         self,
@@ -27,6 +29,17 @@ class InMemoryDocumentStore:
         raw_bytes: Optional[bytes] = None
     ) -> str:
         with self._lock:
+            # If doc already exists, update position in OrderedDict
+            if meta.doc_id in self._documents:
+                self._documents.move_to_end(meta.doc_id)
+            else:
+                # Evict oldest if capacity exceeded (Efficiency & Memory Safety)
+                while len(self._documents) >= self._max_capacity:
+                    oldest_id, _ = self._documents.popitem(last=False)
+                    self._chunks.pop(oldest_id, None)
+                    self._raw_texts.pop(oldest_id, None)
+                    self._raw_bytes.pop(oldest_id, None)
+
             self._documents[meta.doc_id] = meta
             self._raw_texts[meta.doc_id] = raw_text
             self._chunks[meta.doc_id] = chunks
@@ -36,7 +49,10 @@ class InMemoryDocumentStore:
 
     def get_document(self, doc_id: str) -> Optional[DocumentMeta]:
         with self._lock:
-            return self._documents.get(doc_id)
+            doc = self._documents.get(doc_id)
+            if doc:
+                self._documents.move_to_end(doc_id)
+            return doc
 
     def get_raw_text(self, doc_id: str) -> Optional[str]:
         with self._lock:
@@ -85,5 +101,5 @@ class InMemoryDocumentStore:
             self._raw_bytes.clear()
 
 
-# Global singleton instance
-document_store = InMemoryDocumentStore()
+# Global singleton instance with memory bounds
+document_store = InMemoryDocumentStore(max_capacity=50)

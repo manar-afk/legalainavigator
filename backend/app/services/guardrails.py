@@ -1,7 +1,7 @@
 import re
 from typing import Tuple, List
 
-# Patterns frequently used in prompt injection attempts targeting LLMs
+# Precompiled patterns frequently used in prompt injection attempts targeting LLMs
 INJECTION_PATTERNS = [
     r"(?i)\bignore\s+(all\s+)?(previous|prior|above)\s+instructions\b",
     r"(?i)\bsystem\s+prompt\s+override\b",
@@ -12,8 +12,9 @@ INJECTION_PATTERNS = [
     r"(?i)\bact\s+as\s+an\s+unrestricted\s+ai\b",
     r"(?i)</\s*untrusted_document_data\s*>",  # Delimiter breakout attempt
 ]
+COMPILED_INJECTION_PATTERNS = [re.compile(p) for p in INJECTION_PATTERNS]
 
-# Patterns of overly definitive or prohibited legal assertions in system responses
+# Precompiled patterns of overly definitive or prohibited legal assertions in system responses
 DEFINITIVE_LEGAL_PATTERNS = [
     (r"(?i)\bthis\s+clause\s+is\s+illegal\b", "this clause may raise enforceability questions under applicable law"),
     (r"(?i)\byou\s+will\s+definitely\s+win\b", "this factor may support your position, subject to court evaluation"),
@@ -21,6 +22,8 @@ DEFINITIVE_LEGAL_PATTERNS = [
     (r"(?i)\byour\s+landlord\s+cannot\s+do\s+this\b", "Section 8 appears to require a longer notice period than what was provided"),
     (r"(?i)\bwe\s+advise\s+you\s+to\s+sue\b", "you may wish to consult a legal professional regarding formal dispute steps"),
 ]
+COMPILED_DEFINITIVE_PATTERNS = [(re.compile(p), repl) for p, repl in DEFINITIVE_LEGAL_PATTERNS]
+DELIMITER_BREAKOUT_RE = re.compile(r"(?i)</\s*untrusted_document_data\s*>")
 
 
 class GuardrailService:
@@ -44,12 +47,12 @@ class GuardrailService:
     def inspect_untrusted_document(text: str) -> List[str]:
         """
         Scans raw document text for potential adversarial prompt-injection patterns or
-        delimiter-escape attempts.
+        delimiter-escape attempts with precompiled regexes.
         Returns audit warning descriptions without modifying the original text.
         """
         flags = []
-        for pattern in INJECTION_PATTERNS:
-            matches = list(re.finditer(pattern, text))
+        for compiled_pattern in COMPILED_INJECTION_PATTERNS:
+            matches = list(compiled_pattern.finditer(text))
             for m in matches:
                 flags.append(f"Detected potential prompt-injection/delimiter pattern: '{m.group(0)}' at index {m.start()}")
         return flags
@@ -71,8 +74,7 @@ class GuardrailService:
         Treats delimiters as structural contextual markers, reinforcing that the payload is passive data.
         """
         # Neutralize delimiter breakout attempts within the untrusted text
-        safe_content = re.sub(
-            r"(?i)</\s*untrusted_document_data\s*>",
+        safe_content = DELIMITER_BREAKOUT_RE.sub(
             "&lt;/UNTRUSTED_DOCUMENT_DATA_ESCAPED&gt;",
             content
         )
@@ -92,8 +94,8 @@ class GuardrailService:
         Compliance filter transforming definitive legal claims into neutral informational framing.
         """
         refined = text
-        for pattern, replacement in DEFINITIVE_LEGAL_PATTERNS:
-            refined = re.sub(pattern, replacement, refined)
+        for compiled_pattern, replacement in COMPILED_DEFINITIVE_PATTERNS:
+            refined = compiled_pattern.sub(replacement, refined)
         return refined
 
 

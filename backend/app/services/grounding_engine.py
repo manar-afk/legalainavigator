@@ -19,6 +19,25 @@ GENERIC_QUERY_WORDS = {
     "does", "what", "how", "conditions", "specified", "provisions", "rule", "rules", "flat"
 }
 
+CURRENCY_PATTERN = re.compile(
+    r"(?:INR|Rs\.?|₹|\$|USD)\s*(\d[\d,]*(?:\.\d{2})?)(?:\s*(?:per\s+(?:month|annum|year)|/-))?|\b(\d{1,3}(?:,\d{2,3})+(?:\.\d{2})?)\b",
+    re.IGNORECASE
+)
+DURATION_PATTERN = re.compile(
+    r"\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten|fourteen|fifteen|twenty|thirty|forty-five|sixty|ninety)(?:\s*\(\d+\))?\s*(?:business\s+)?(days?|months?|weeks?)\b",
+    re.IGNORECASE
+)
+NOTICE_DUR_PATTERN = re.compile(
+    r"\b(?P<dur>(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|fourteen|fifteen|twenty|thirty|forty-five|sixty|ninety)(?:\s*\(\d+\))?\s*(?:business\s+)?(?:days?|months?|weeks?))\s*(?:['’]s?)?\s*(?:prior\s+)?(?:written\s+)?notice\b|"
+    r"\bnotice\s+(?:period\s+)?(?:of\s+)?(?P<dur2>(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|fourteen|fifteen|twenty|thirty|forty-five|sixty|ninety)(?:\s*\(\d+\))?\s*(?:business\s+)?(?:days?|months?|weeks?))\b",
+    re.IGNORECASE
+)
+CURE_NOTICE_PATTERN = re.compile(
+    r"cure\s+notice[^\.]{0,80}?(?P<dur>(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|fourteen|fifteen|twenty|thirty|forty-five|sixty|ninety)(?:\s*\(\d+\))?\s*(?:business\s+)?(?:days?|months?|weeks?))\s*(?:to\s+remedy|cure)?",
+    re.IGNORECASE
+)
+SENTENCE_SPLIT_RE = re.compile(r"(?<=[.\n])\s+")
+
 
 class GroundedQAEngine:
     """
@@ -599,24 +618,15 @@ class GroundedQAEngine:
         Enforces evidence-bound dynamic extraction:
         REGEX CANDIDATE -> exact source span verification -> semantic association -> provenance.
         """
-        currency_pattern = re.compile(
-            r"(?:INR|Rs\.?|₹|\$|USD)\s*(\d[\d,]*(?:\.\d{2})?)(?:\s*(?:per\s+(?:month|annum|year)|/-))?|\b(\d{1,3}(?:,\d{2,3})+(?:\.\d{2})?)\b",
-            re.IGNORECASE
-        )
-        duration_pattern = re.compile(
-            r"\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten|fourteen|fifteen|twenty|thirty|forty-five|sixty|ninety)(?:\s*\(\d+\))?\s*(?:business\s+)?(days?|months?|weeks?)\b",
-            re.IGNORECASE
-        )
-
         for chunk, _ in scored_chunks:
             text = chunk.text
-            sentences = [s.strip() for s in re.split(r"(?<=[.\n])\s+", text) if s.strip()]
+            sentences = [s.strip() for s in SENTENCE_SPLIT_RE.split(text) if s.strip()]
 
             if concept_type == "salary":
                 for s in sentences:
                     s_lower = s.lower()
                     if any(k in s_lower for k in ["salary", "remuneration", "compensation", "fixed pay", "ctc", "stipend"]):
-                        m = currency_pattern.search(s)
+                        m = CURRENCY_PATTERN.search(s)
                         if m:
                             val = m.group(0).strip()
                             c_start = text.find(val)
@@ -633,7 +643,7 @@ class GroundedQAEngine:
                 for s in sentences:
                     s_lower = s.lower()
                     if any(k in s_lower for k in ["rent", "monthly rent", "rental"]):
-                        m = currency_pattern.search(s)
+                        m = CURRENCY_PATTERN.search(s)
                         if m:
                             val = m.group(0).strip()
                             c_start = text.find(val)
@@ -650,11 +660,11 @@ class GroundedQAEngine:
                 for s in sentences:
                     s_lower = s.lower()
                     if any(k in s_lower for k in ["deposit", "security deposit", "caution deposit"]):
-                        m = currency_pattern.search(s)
+                        m = CURRENCY_PATTERN.search(s)
                         if m:
                             val = m.group(0).strip()
                             c_start = text.find(val)
-                            refund_m = duration_pattern.search(text)
+                            refund_m = DURATION_PATTERN.search(text)
                             refund_str = refund_m.group(0) if refund_m else None
                             return {
                                 "value": val,
@@ -670,7 +680,7 @@ class GroundedQAEngine:
                 for s in sentences:
                     s_lower = s.lower()
                     if any(k in s_lower for k in ["bonus", "joining bonus", "sign-on", "incentive"]):
-                        m = currency_pattern.search(s)
+                        m = CURRENCY_PATTERN.search(s)
                         if m:
                             val = m.group(0).strip()
                             c_start = text.find(val)
@@ -684,22 +694,12 @@ class GroundedQAEngine:
                             }
 
             elif concept_type == "notice":
-                notice_dur_pattern = re.compile(
-                    r"\b(?P<dur>(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|fourteen|fifteen|twenty|thirty|forty-five|sixty|ninety)(?:\s*\(\d+\))?\s*(?:business\s+)?(?:days?|months?|weeks?))\s*(?:['’]s?)?\s*(?:prior\s+)?(?:written\s+)?notice\b|"
-                    r"\bnotice\s+(?:period\s+)?(?:of\s+)?(?P<dur2>(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|fourteen|fifteen|twenty|thirty|forty-five|sixty|ninety)(?:\s*\(\d+\))?\s*(?:business\s+)?(?:days?|months?|weeks?))\b",
-                    re.IGNORECASE
-                )
-                cure_notice_pattern = re.compile(
-                    r"cure\s+notice[^\.]{0,80}?(?P<dur>(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|fourteen|fifteen|twenty|thirty|forty-five|sixty|ninety)(?:\s*\(\d+\))?\s*(?:business\s+)?(?:days?|months?|weeks?))\s*(?:to\s+remedy|cure)?",
-                    re.IGNORECASE
-                )
-
                 # Prioritize regular/convenience termination notice across all chunks
                 for c_chunk, _ in scored_chunks:
                     c_text = c_chunk.text
-                    c_sentences = [s.strip() for s in re.split(r"(?<=[.\n])\s+", c_text) if s.strip()]
+                    c_sentences = [s.strip() for s in SENTENCE_SPLIT_RE.split(c_text) if s.strip()]
                     for s in c_sentences:
-                        m = notice_dur_pattern.search(s)
+                        m = NOTICE_DUR_PATTERN.search(s)
                         if m:
                             val = (m.group("dur") or m.group("dur2")).strip()
                             c_start = c_text.find(val)
@@ -718,7 +718,7 @@ class GroundedQAEngine:
                     c_text = c_chunk.text
                     c_sentences = [s.strip() for s in re.split(r"(?<=[.\n])\s+", c_text) if s.strip()]
                     for s in c_sentences:
-                        m = cure_notice_pattern.search(s)
+                        m = CURE_NOTICE_PATTERN.search(s)
                         if m:
                             val = m.group("dur").strip()
                             c_start = c_text.find(val)
@@ -737,7 +737,7 @@ class GroundedQAEngine:
                 for s in sentences:
                     s_lower = s.lower()
                     if "lock-in" in s_lower or "lock in" in s_lower:
-                        m = duration_pattern.search(s)
+                        m = DURATION_PATTERN.search(s)
                         val = m.group(0).strip() if m else "lock-in period"
                         c_start = text.find(val) if m else text.find("lock-in")
                         return {

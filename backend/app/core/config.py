@@ -32,14 +32,25 @@ class Settings(BaseModel):
     ENABLE_EVALUATION_ENDPOINT: bool = os.getenv("ENABLE_EVALUATION_ENDPOINT", "false").lower() in ("true", "1", "yes")
     EVALUATION_KEY: str = os.getenv("EVALUATION_KEY", "")
 
-    # Server settings
+    # Server & Security settings
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", "8000"))
     CORS_ORIGINS: list[str] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "*"
+        origin.strip()
+        for origin in os.getenv(
+            "CORS_ORIGINS",
+            "http://localhost:3000,http://127.0.0.1:3000,https://legal-navigator-frontend-ca3tszb5va-uc.a.run.app"
+        ).split(",")
+        if origin.strip()
     ]
+    # Resource & DoS Protection Limits (Efficiency & Security)
+    MAX_UPLOAD_SIZE_BYTES: int = int(os.getenv("MAX_UPLOAD_SIZE_BYTES", str(15 * 1024 * 1024)))  # 15 MB
+    MAX_TEXT_CONTENT_CHARS: int = int(os.getenv("MAX_TEXT_CONTENT_CHARS", "1000000"))  # 1,000,000 characters
+    MAX_QUERY_CHARS: int = int(os.getenv("MAX_QUERY_CHARS", "5000"))  # 5,000 characters
+    MAX_SITUATION_CHARS: int = int(os.getenv("MAX_SITUATION_CHARS", "20000"))  # 20,000 characters
+    MAX_DOCUMENTS_IN_MEMORY: int = int(os.getenv("MAX_DOCUMENTS_IN_MEMORY", "50"))
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "180"))
+    CACHE_MAX_ENTRIES: int = int(os.getenv("CACHE_MAX_ENTRIES", "256"))
 
 
 settings = Settings()

@@ -1,7 +1,10 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Header
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Header, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, Any, List, Optional
 import os
+import hashlib
+import threading
+from collections import OrderedDict
 from pydantic import BaseModel
 
 from .core.config import settings
@@ -30,18 +33,66 @@ app = FastAPI(
     description="GenAI-powered Legal Information Navigator making legal documents accessible and navigable."
 )
 
+# Robust CORS Configuration (Disallowing wildcards when credentials enabled)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"^https:\/\/.*\.run\.app$",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+# Security Headers & Resource Protection Middleware
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response: Response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+
+# LRU Memory Cache for High-Efficiency Query & Navigation Retrieval
+class FastLRUResponseCache:
+    def __init__(self, capacity: int = 256):
+        self._capacity = capacity
+        self._cache: OrderedDict[str, Any] = OrderedDict()
+        self._lock = threading.Lock()
+
+    def get(self, key: str) -> Optional[Any]:
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+                return self._cache[key]
+            return None
+
+    def set(self, key: str, value: Any):
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+            else:
+                while len(self._cache) >= self._capacity:
+                    self._cache.popitem(last=False)
+            self._cache[key] = value
+
+    def clear(self):
+        with self._lock:
+            self._cache.clear()
+
+
+response_cache = FastLRUResponseCache(capacity=settings.CACHE_MAX_ENTRIES)
 
 
 class TextUploadRequest(BaseModel):
     filename: str = "document.txt"
     content: str
+
+
+ALLOWED_EXTENSIONS = {".txt", ".pdf", ".docx", ".md"}
 
 
 @app.get("/")
@@ -91,40 +142,65 @@ def get_document_chunks(doc_id: str):
 
 @app.post(f"{settings.API_PREFIX}/documents/upload", response_model=DocumentMeta)
 async def upload_document_file(file: UploadFile = File(...)):
-    filename = file.filename or "uploaded_file"
-    file_bytes = await file.read()
+    raw_filename = file.filename or "uploaded_file"
+    # Security: Path traversal sanitization (CWE-22)
+    filename = os.path.basename(raw_filename.replace("\\", "/"))
+    ext = os.path.splitext(filename)[1].lower()
+    if ext and ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file extension '{ext}'. Allowed extensions: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+
+    # Security & Efficiency: Bounded file read to prevent Memory Exhaustion / OOM (CWE-400)
+    file_bytes = await file.read(settings.MAX_UPLOAD_SIZE_BYTES + 1024)
     if not file_bytes:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    if len(file_bytes) > settings.MAX_UPLOAD_SIZE_BYTES:
+        max_mb = settings.MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)
+        raise HTTPException(status_code=413, detail=f"File exceeds maximum allowed size ({max_mb} MB).")
 
-    if filename.lower().endswith(".pdf"):
+    if ext == ".pdf":
         meta, _ = document_parser.parse_pdf_bytes(file_bytes, filename=filename)
-    elif filename.lower().endswith(".docx"):
+    elif ext == ".docx":
         meta, _ = document_parser.parse_docx_bytes(file_bytes, filename=filename)
     else:
         text_content = file_bytes.decode("utf-8", errors="replace")
         meta, _ = document_parser.parse_text_content(text_content, filename=filename)
 
+    response_cache.clear()
     return meta
 
 
 @app.post(f"{settings.API_PREFIX}/documents/text", response_model=DocumentMeta)
 def upload_text_document(req: TextUploadRequest):
-    if not req.content.strip():
+    content = req.content.strip()
+    if not content:
         raise HTTPException(status_code=400, detail="Document content cannot be empty.")
-    meta, _ = document_parser.parse_text_content(req.content, filename=req.filename)
+    if len(content) > settings.MAX_TEXT_CONTENT_CHARS:
+        raise HTTPException(status_code=413, detail=f"Document exceeds maximum length ({settings.MAX_TEXT_CONTENT_CHARS} characters).")
+
+    clean_filename = os.path.basename(req.filename.strip().replace("\\", "/")) or "document.txt"
+    meta, _ = document_parser.parse_text_content(content, filename=clean_filename)
+    response_cache.clear()
     return meta
 
 
 @app.post(f"{settings.API_PREFIX}/documents/load-sample", response_model=DocumentMeta)
 def load_sample_document(sample_name: str = "residential_lease_agreement.txt"):
-    sample_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "sample_documents", sample_name))
-    if not os.path.exists(sample_path):
-        raise HTTPException(status_code=404, detail=f"Sample document '{sample_name}' not found at {sample_path}")
+    # Security: Path traversal sanitization (CWE-22)
+    clean_sample_name = os.path.basename(sample_name.strip().replace("\\", "/"))
+    samples_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "sample_documents"))
+    sample_path = os.path.abspath(os.path.join(samples_dir, clean_sample_name))
+
+    if not sample_path.startswith(samples_dir) or not os.path.exists(sample_path):
+        raise HTTPException(status_code=404, detail=f"Sample document '{clean_sample_name}' not found.")
 
     with open(sample_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    meta, _ = document_parser.parse_text_content(content, filename=sample_name)
+    meta, _ = document_parser.parse_text_content(content, filename=clean_sample_name)
+    response_cache.clear()
     return meta
 
 
@@ -133,6 +209,7 @@ def delete_document(doc_id: str):
     success = document_store.delete_document(doc_id)
     if not success:
         raise HTTPException(status_code=404, detail="Document not found")
+    response_cache.clear()
     return {"deleted": True, "doc_id": doc_id}
 
 
@@ -153,18 +230,32 @@ def execute_query(request: QueryRequest):
     - Mode 2: Reclassified Document + External Law (prepared for Phase 5 external retrieval).
     """
     try:
+        # Security: Input sanitization & bounded length
+        request.query = request.query.replace("\x00", "")[:settings.MAX_QUERY_CHARS]
+        if request.situation and request.situation.raw_description:
+            request.situation.raw_description = request.situation.raw_description.replace("\x00", "")[:settings.MAX_SITUATION_CHARS]
+
+        query_cache_key = hashlib.sha256(
+            f"q_{sorted(request.doc_ids or [])}_{request.query}_{request.situation}".encode()
+        ).hexdigest()
+        cached_ans = response_cache.get(query_cache_key)
+        if cached_ans is not None:
+            return cached_ans
+
         intent = mode_router.classify_and_route(request)
 
         # Mode 1: Document-Only Q&A
         if intent.effective_mode == OperationalMode.MODE_1_DOC_ONLY:
-            return grounding_engine.answer_document_query(request, intent)
-
+            ans = grounding_engine.answer_document_query(request, intent)
         # Mode 3: General / No-Document Q&A
-        if intent.effective_mode == OperationalMode.MODE_3_GENERAL_NO_DOC:
-            return general_qa_service.answer_general_query(request, intent)
-
+        elif intent.effective_mode == OperationalMode.MODE_3_GENERAL_NO_DOC:
+            ans = general_qa_service.answer_general_query(request, intent)
         # Mode 2: Document + External Law execution
-        return external_law_service.answer_external_law_query(request, intent)
+        else:
+            ans = external_law_service.answer_external_law_query(request, intent)
+
+        response_cache.set(query_cache_key, ans)
+        return ans
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -186,17 +277,29 @@ def navigate_legal_context(request: NavigateRequest) -> UnifiedNavigationRespons
 
         # 1. Ingest pasted text if provided and not yet registered
         if request.pasted_content and request.pasted_content.strip():
+            safe_pasted = request.pasted_content.replace("\x00", "")[:settings.MAX_TEXT_CONTENT_CHARS].strip()
             meta, _ = document_parser.parse_text_content(
-                request.pasted_content.strip(),
+                safe_pasted,
                 filename="pasted_agreement.txt"
             )
             if meta.doc_id not in active_doc_ids:
                 active_doc_ids.append(meta.doc_id)
 
+        clean_query = (request.query or "").replace("\x00", "")[:settings.MAX_QUERY_CHARS].strip()
+        clean_sit = (request.situation_description or "").replace("\x00", "")[:settings.MAX_SITUATION_CHARS].strip()
+
+        # Efficiency: Check LRU cache for identical navigation requests
+        cache_key = hashlib.sha256(
+            f"nav_{sorted(active_doc_ids)}_{clean_query}_{clean_sit}_{request.declared_role}_{request.jurisdiction}".encode()
+        ).hexdigest()
+        cached_res = response_cache.get(cache_key)
+        if cached_res is not None:
+            return cached_res
+
         # 2. Build situation context if provided
         situation = None
         role_enum = None
-        if request.situation_description or request.declared_role or request.jurisdiction:
+        if clean_sit or request.declared_role or request.jurisdiction:
             role_enum = UserRole.GENERAL
             if request.declared_role:
                 try:
@@ -204,14 +307,14 @@ def navigate_legal_context(request: NavigateRequest) -> UnifiedNavigationRespons
                 except ValueError:
                     role_enum = UserRole.GENERAL
             situation = UserSituation(
-                raw_description=request.situation_description or request.query or "",
+                raw_description=clean_sit or clean_query or "",
                 declared_role=role_enum,
                 jurisdiction=request.jurisdiction
             )
 
-        effective_query = (request.query or "").strip()
-        if not effective_query and request.situation_description:
-            effective_query = request.situation_description.strip()
+        effective_query = clean_query
+        if not effective_query and clean_sit:
+            effective_query = clean_sit
         if not effective_query:
             effective_query = "Summarize key contractual terms, obligations, and notice requirements."
 
@@ -338,7 +441,7 @@ def navigate_legal_context(request: NavigateRequest) -> UnifiedNavigationRespons
         else:
             doc_says = "No document was provided for textual analysis."
 
-        return UnifiedNavigationResponse(
+        nav_response = UnifiedNavigationResponse(
             summary_and_perspective=summary,
             answer=grounded_ans.answer if grounded_ans else "",
             inferred_role=inferred_role_str,
@@ -356,6 +459,8 @@ def navigate_legal_context(request: NavigateRequest) -> UnifiedNavigationRespons
             consultation_brief_markdown=brief_md,
             diagnostics=diag
         )
+        response_cache.set(cache_key, nav_response)
+        return nav_response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

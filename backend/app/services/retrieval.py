@@ -97,10 +97,12 @@ ROLE_HEURISTIC_TARGETS: Dict[UserRole, Dict[str, List[str]]] = {
 }
 
 
+TOKEN_RE = re.compile(r"\b[a-zA-Z0-9\.\-]+\b")
+
 class DomainEnhancedRetriever:
     """
-    Retrieval engine combining:
-      1. Stopword-filtered BM25 lexical ranking.
+    High-efficiency retrieval engine combining:
+      1. Stopword-filtered BM25 lexical ranking (O(N) with precomputed IDFs and avg_len).
       2. Domain semantic concept clusters for indirect / conceptual queries (e.g. 'restaurant' -> 'commercial use').
       3. Section header priority boosts.
       4. Role-based heuristic boosts (+1.5, prioritizing without suppressing counterparty covenants).
@@ -109,7 +111,7 @@ class DomainEnhancedRetriever:
 
     @classmethod
     def tokenize(cls, text: str, filter_stopwords: bool = True) -> List[str]:
-        raw_tokens = [w.lower() for w in re.findall(r"\b[a-zA-Z0-9\.\-]+\b", text) if len(w) > 1]
+        raw_tokens = [w.lower() for w in TOKEN_RE.findall(text) if len(w) > 1]
         if filter_stopwords:
             return [t for t in raw_tokens if t not in STOPWORDS and len(t) > 2]
         return raw_tokens
@@ -139,7 +141,7 @@ class DomainEnhancedRetriever:
         role_status: Optional[RoleResolutionStatus] = None
     ) -> List[Tuple[DocumentChunk, float]]:
         """
-        Retrieves and ranks chunks from specified documents.
+        Retrieves and ranks chunks from specified documents with O(N) efficiency.
         Returns a list of (DocumentChunk, relevance_score) sorted by relevance descending.
         Applies role-based heuristic boost (+1.5) when a role is resolved without conflict.
         If role_status is UNRESOLVED_CONFLICT or user_role is GENERAL/None, executes role-neutral retrieval.
@@ -168,6 +170,13 @@ class DomainEnhancedRetriever:
                 if term in unique_in_chunk:
                     doc_freqs[term] = doc_freqs.get(term, 0) + 1
 
+        # Efficiency Optimization: Precompute IDFs and avg_len once outside the loop
+        avg_len = sum(len(toks) for toks in chunk_token_cache.values()) / max(total_chunks, 1)
+        idf_cache: Dict[str, float] = {
+            term: math.log(1.0 + (total_chunks - doc_freqs.get(term, 0) + 0.5) / (doc_freqs.get(term, 0) + 0.5))
+            for term in query_tokens
+        }
+
         scored_chunks: List[Tuple[DocumentChunk, float]] = []
 
         # Determine if role heuristic boost applies
@@ -180,6 +189,9 @@ class DomainEnhancedRetriever:
             and user_role in ROLE_HEURISTIC_TARGETS
         )
 
+        k1 = 1.2
+        b = 0.75
+
         for chunk in chunks:
             c_tokens = chunk_token_cache[chunk.chunk_id]
             if not c_tokens:
@@ -190,17 +202,12 @@ class DomainEnhancedRetriever:
             chunk_text_lower = chunk.text.lower()
             sec_ref = f"{chunk.section_number or ''} {chunk.section_title or ''}".lower()
 
-            # 1. Lexical BM25 Score
+            # 1. Lexical BM25 Score (O(1) lookup per matched term)
             bm25_score = 0.0
-            k1 = 1.2
-            b = 0.75
-            avg_len = sum(len(toks) for toks in chunk_token_cache.values()) / max(total_chunks, 1)
-
             matching_query_terms = set(query_tokens).intersection(c_token_set)
             for term in matching_query_terms:
                 tf = c_tokens.count(term)
-                df = doc_freqs.get(term, 0)
-                idf = math.log(1.0 + (total_chunks - df + 0.5) / (df + 0.5))
+                idf = idf_cache[term]
                 bm25_score += idf * ((tf * (k1 + 1.0)) / (tf + k1 * (1.0 - b + b * (c_len / max(avg_len, 1.0)))))
 
             # 2. Section Header Boost
