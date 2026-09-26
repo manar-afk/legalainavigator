@@ -257,7 +257,8 @@ def navigate_legal_context(request: NavigateRequest) -> UnifiedNavigationRespons
                 declared_role=role_enum,
                 comparison_doc_id=comparison_secondary_id,
                 query_text=effective_query,
-                operational_mode=intent.effective_mode.value
+                operational_mode=intent.effective_mode.value,
+                precomputed_comparison=comp_res
             )
         except Exception:
             actionable_out = None
