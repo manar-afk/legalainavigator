@@ -88,20 +88,24 @@ class ActionableService:
         Consumes established Phase 4-8 entities and formats actionable outputs without re-reasoning.
         """
         # Step 1: Resolve Document Texts & Metadata
-        doc_a_id = doc_ids[0] if doc_ids else "doc_primary"
-        doc_a_obj = document_store.get_document(doc_a_id)
-        doc_a_name = doc_a_obj.filename if doc_a_obj else f"{doc_a_id}.txt"
-        doc_a_text = document_store.get_raw_text(doc_a_id) or ""
-
+        doc_a_id = doc_ids[0] if doc_ids else None
         governing_docs: List[DocumentVersionMeta] = []
-        meta_a = comparison_service.extract_document_version_meta(doc_a_id, doc_a_name, doc_a_text)
-        governing_docs.append(meta_a)
+        doc_a_name = None
+        doc_a_text = ""
+        doc_b_obj = None
 
-        doc_b_obj = document_store.get_document(comparison_doc_id) if comparison_doc_id else None
-        if doc_b_obj and comparison_doc_id:
-            doc_b_text = document_store.get_raw_text(comparison_doc_id) or ""
-            meta_b = comparison_service.extract_document_version_meta(doc_b_obj.doc_id, doc_b_obj.filename, doc_b_text)
-            governing_docs.append(meta_b)
+        if doc_a_id:
+            doc_a_obj = document_store.get_document(doc_a_id)
+            doc_a_name = doc_a_obj.filename if doc_a_obj else f"{doc_a_id}.txt"
+            doc_a_text = document_store.get_raw_text(doc_a_id) or ""
+            meta_a = comparison_service.extract_document_version_meta(doc_a_id, doc_a_name, doc_a_text)
+            governing_docs.append(meta_a)
+
+            doc_b_obj = document_store.get_document(comparison_doc_id) if comparison_doc_id else None
+            if doc_b_obj and comparison_doc_id:
+                doc_b_text = document_store.get_raw_text(comparison_doc_id) or ""
+                meta_b = comparison_service.extract_document_version_meta(doc_b_obj.doc_id, doc_b_obj.filename, doc_b_text)
+                governing_docs.append(meta_b)
 
         # Step 2: Resolve Situation & Role Profile (Phase 6)
         user_sit: Optional[UserSituation] = None
@@ -123,7 +127,7 @@ class ActionableService:
 
         # Step 3: Resolve Comparison Context (Phase 8)
         comparison_result: Optional[ComparisonResult] = precomputed_comparison
-        if not comparison_result:
+        if not comparison_result and doc_a_id:
             if doc_b_obj:
                 comparison_result = comparison_service.compare_documents(
                     ComparisonRequest(
@@ -144,7 +148,9 @@ class ActionableService:
         # Step 4: Resolve Missing Info & Gatekeeper Context (Phase 7)
         missing_info_report: Optional[MissingInfoReport] = precomputed_missing_info
         if not missing_info_report:
-            op_mode = OperationalMode.MODE_2_DOC_EXTERNAL if operational_mode == "mode_2_doc_external" else OperationalMode.MODE_1_DOC_ONLY
+            op_mode = OperationalMode.MODE_2_DOC_EXTERNAL if operational_mode == "mode_2_doc_external" else (
+                OperationalMode.MODE_3_GENERAL_NO_DOC if operational_mode == "mode_3_general_no_doc" or not doc_a_id else OperationalMode.MODE_1_DOC_ONLY
+            )
             missing_info_report = missing_info_service.detect_missing_information(
                 query=query_text or "What are the termination requirements?",
                 situation=user_sit,
@@ -154,12 +160,14 @@ class ActionableService:
             )
 
         # Step 5: Extract Document-Described Covenants Matrix
-        covenants_matrix = self._build_covenants_matrix(
-            doc_id=doc_a_id,
-            doc_name=doc_a_name,
-            doc_text=doc_a_text,
-            comparison_result=comparison_result,
-        )
+        covenants_matrix: List[DocumentDescribedCovenantItem] = []
+        if doc_a_id and doc_a_text:
+            covenants_matrix = self._build_covenants_matrix(
+                doc_id=doc_a_id,
+                doc_name=doc_a_name or f"{doc_a_id}.txt",
+                doc_text=doc_a_text,
+                comparison_result=comparison_result,
+            )
 
         # Step 6: Formulate Evidence-Linked Curated Questions for Counsel
         targeted_questions = self._build_lawyer_questions(
@@ -706,8 +714,8 @@ class ActionableService:
         checklist.append(
             ActionableChecklistItem(
                 category=ChecklistCategory.QUESTIONS_TO_CLARIFY,
-                task_description="Print two copies of this Professional Consultation Brief to bring to your consultation with legal counsel.",
-                rationale="Provides counsel with an immediate structured factual index and exact clause references.",
+                task_description="Preserve all written communications, payment or contribution records, and note key communication dates.",
+                rationale="Provides counsel with an immediate chronological factual record and verified supporting documentation.",
                 priority=ChecklistPriority.STANDARD,
                 provenance=ActionableItemProvenance(
                     source_type=ActionableSourceType.SYNTHESIZED_PREPARATION,
@@ -736,19 +744,23 @@ class ActionableService:
         """
         if operational_mode == "mode_2_doc_external" and external_law_sources:
             part_a_clauses = [f"- Section {c.clause_evidence.section_number}: {c.summary_description}" for c in covenants_matrix[:3]]
-            part_a = "### Part A: What the Provided Agreement States\n" + "\n".join(part_a_clauses)
+            part_a = "### Part A: What the Provided Agreement States\n" + ("\n".join(part_a_clauses) if part_a_clauses else "- No specific agreement clauses were extracted.")
 
             part_b_statutes = [f"- {s.title} ({s.section_provision}): {s.exact_retrieved_text[:180]}..." for s in external_law_sources]
             part_b = "### Part B: What Authoritative External Statutes State\n" + "\n".join(part_b_statutes)
 
+            statute_titles = ", ".join(dict.fromkeys(s.title for s in external_law_sources if s.title)) or "statutory rules"
             part_c = (
                 "### Part C: Uncertainty & Questions for Legal Review\n"
-                "- Whether local tenancy legislation or Transfer of Property Act provisions supersede contractual notice terms.\n"
+                f"- Whether governing statutory provisions ({statute_titles}) supersede contractual notice terms.\n"
                 "- Whether statutory notice protections require specific dispatch formats under local rules."
             )
             return f"{part_a}\n\n{part_b}\n\n{part_c}"
 
-        # Standard Mode 1 Document-Only Synthesis
+        # Standard Mode 1 or Mode 3 Synthesis
+        if not covenants_matrix:
+            return "This assessment is based on the factual situation provided and applicable legal principles (no contract document was attached)."
+
         lines = [
             "This summary synthesizes the textual provisions governing your situation based on the uploaded agreement:",
         ]
@@ -772,7 +784,6 @@ class ActionableService:
         lines = [
             "# Professional Legal Consultation Brief",
             f"**Generated On**: {brief.generated_at}  ",
-            f"**Operational Mode**: `{brief.operational_mode}`  ",
             "",
             "> [!IMPORTANT]",
             f"> {brief.disclaimer}",
@@ -794,20 +805,26 @@ class ActionableService:
             "",
             "## 2. Governing Documents & Execution Status",
         ])
-        for doc in brief.governing_documents:
-            lines.append(f"- **{doc.doc_name}** (`{doc.doc_id}`): Role = `{doc.document_role.value}`, Status = `{doc.execution_status.value}`")
+        if brief.governing_documents:
+            for doc in brief.governing_documents:
+                lines.append(f"- **{doc.doc_name}** (`{doc.doc_id}`): Role = `{doc.document_role.value}`, Status = `{doc.execution_status.value}`")
+        else:
+            lines.append("- *No document was provided for textual analysis.*")
 
         lines.extend([
             "",
             "## 3. Document-Described Covenants Matrix",
             "*Note: The following entries describe what the contract text states. They do not constitute an independent legal determination of enforceability.*",
             "",
-            "| Covenant Title | Party Obligated | Trigger Type | Stated Requirement / Quote |",
-            "|---|---|---|---|",
         ])
-        for cov in covenants:
-            quote_clean = cov.clause_evidence.exact_quote.replace("\n", " ").replace("|", "\\|")[:90]
-            lines.append(f"| **{cov.title}** | `{cov.obligated_party.value}` | `{cov.trigger_type.value}` | {quote_clean}... |")
+        if covenants:
+            lines.append("| Covenant Title | Party Obligated | Trigger Type | Stated Requirement / Quote |")
+            lines.append("|---|---|---|---|")
+            for cov in covenants:
+                quote_clean = cov.clause_evidence.exact_quote.replace("\n", " ").replace("|", "\\|")[:90]
+                lines.append(f"| **{cov.title}** | `{cov.obligated_party.value}` | `{cov.trigger_type.value}` | {quote_clean}... |")
+        else:
+            lines.append("*No contractual provisions were extracted (no document provided).*")
 
         lines.extend([
             "",

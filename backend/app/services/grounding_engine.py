@@ -338,7 +338,7 @@ class GroundedQAEngine:
             uncertainty_and_gaps=[
                 f"Contradiction: {c}" for c in (missing_info_report.contradictions if missing_info_report else [contradiction_desc])
             ],
-            answer=f"Indeterminate: Contradictory evidence regarding key lease terms prevents determining the applicable contractual pathway. {contradiction_desc}",
+            answer=f"Indeterminate: Contradictory evidence regarding key contractual terms prevents determining the applicable contractual pathway. {contradiction_desc}",
             what_the_document_says="The agreement or user assertions provide conflicting terms on a governing condition.",
             what_this_means_in_plain_language="Because the factual assertions or document provisions directly contradict each other on a material condition, neither outcome can be established.",
             why_it_matters_to_your_situation="Resolving this factual contradiction is required before determining which contractual pathway applies.",
@@ -400,7 +400,7 @@ class GroundedQAEngine:
             what_is_unclear_or_missing="Subjective fairness criteria cannot be evaluated by automated contract analysis.",
             what_to_check_next=[
                 "Review key commercial terms: rent escalation, lock-in period, and deposit refund timelines.",
-                "Consult a local tenant rights association or legal counsel for commercial negotiation advice."
+                "Consult legal counsel or an appropriate professional association for commercial negotiation advice."
             ],
             sources=[],
             missing_info_details=[],
@@ -453,8 +453,8 @@ class GroundedQAEngine:
                     )
                 ],
                 investigative_recommendations=[
-                    "Check whether any separate amendments or society bylaws address this subject.",
-                    "Consult local tenancy rules regarding matters unaddressed by the written lease."
+                    "Check whether any separate amendments, annexures, or policies address this subject.",
+                    "Consult applicable statutory or regulatory rules regarding matters unaddressed by the written agreement."
                 ]
             )
 
@@ -489,8 +489,8 @@ class GroundedQAEngine:
             ),
             what_is_unclear_or_missing=f"No clause found regarding '{request.query}'.",
             what_to_check_next=[
-                "Check whether any separate amendments or society bylaws address this subject.",
-                "Consult local tenancy rules regarding matters unaddressed by the written lease."
+                "Check whether any separate amendments, annexures, or policies address this subject.",
+                "Consult applicable statutory or regulatory rules regarding matters unaddressed by the written agreement."
             ],
             sources=[],
             missing_info_details=missing_items,

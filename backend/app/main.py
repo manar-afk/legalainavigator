@@ -311,8 +311,8 @@ def navigate_legal_context(request: NavigateRequest) -> UnifiedNavigationRespons
 
         # Jurisdiction note
         jur_note = None
-        if intent.is_jurisdiction_missing:
-            jur_note = "Jurisdiction was not specified. Statutory notice and eviction rules vary substantially by jurisdiction."
+        if intent.is_jurisdiction_missing or (not intent.target_jurisdiction and len(active_doc_ids) == 0):
+            jur_note = "Jurisdiction was not specified. Statutory and regulatory rules vary substantially by jurisdiction."
         elif intent.target_jurisdiction:
             jur_note = f"Governing jurisdiction: {intent.target_jurisdiction}."
 
@@ -329,11 +329,19 @@ def navigate_legal_context(request: NavigateRequest) -> UnifiedNavigationRespons
             "has_external_law": bool(grounded_ans and grounded_ans.external_law),
         }
 
+        doc_says = None
+        if len(active_doc_ids) == 0:
+            doc_says = "No document was provided. This response is based on the information supplied and, where applicable, authoritative legal context."
+        elif grounded_ans and grounded_ans.what_the_document_says:
+            doc_says = grounded_ans.what_the_document_says
+        else:
+            doc_says = "No document was provided for textual analysis."
+
         return UnifiedNavigationResponse(
             summary_and_perspective=summary,
             answer=grounded_ans.answer if grounded_ans else "",
             inferred_role=inferred_role_str,
-            what_the_document_says=(grounded_ans.what_the_document_says if grounded_ans and grounded_ans.what_the_document_says else "No document was provided for textual analysis."),
+            what_the_document_says=doc_says,
             what_this_means_in_plain_language=grounded_ans.what_this_means_in_plain_language if grounded_ans else "",
             why_it_matters=grounded_ans.why_it_matters_to_your_situation if grounded_ans else None,
             sources=sources_list,

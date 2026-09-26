@@ -346,8 +346,137 @@ class MissingInformationEngine:
                 has_internal_contract_contradiction = True
 
         # 5. Build Domain-Specific Prerequisite Heuristic
-        # Domain A: Lease Termination & Notice
-        if any(w in query_lower for w in ["terminate", "leave", "notice", "evict", "vacate", "15 days"]):
+        is_explicit_employment = any(w in combined_text or w in doc_lower for w in [
+            "provident fund", "pf ", "epf", "employer", "employee", "salary", "wage",
+            "gratuity", "severance", "workplace", "employment", "job", "hiring", "bonus"
+        ])
+        is_explicit_lease = any(w in combined_text or w in doc_lower for w in [
+            "lease", "tenant", "tenancy", "landlord", "rent", "flat", "premises", "evict", "vacate", "lock-in"
+        ])
+
+        # Domain A: Employment Rights, Separation & Provident Fund
+        if is_explicit_employment and not is_explicit_lease:
+            heuristic_name = "Employment Rights & Separation Prerequisite Heuristic"
+
+            # Predicate 1: Written Separation Communication (NOTICE_RECEIPT, Blocking)
+            has_sep_comm = any(t in combined_text for t in [
+                "termination letter", "relieving letter", "resignation letter", "separation letter",
+                "email stating", "letter received", "received notice", "written notice", "formal notice"
+            ])
+            if has_sep_comm:
+                p_sep = MissingPredicateItem(
+                    predicate_id="written_separation_notice",
+                    label="Written Separation Communication",
+                    category=PredicateCategory.NOTICE_RECEIPT,
+                    is_blocking=True,
+                    status=PredicateStatus.ESTABLISHED,
+                    source_status=PredicateSourceStatus.USER_ASSERTED,
+                    mode_applicability=[OperationalMode.MODE_1_DOC_ONLY, OperationalMode.MODE_2_DOC_EXTERNAL, OperationalMode.MODE_3_GENERAL_NO_DOC],
+                    why_it_matters="A written separation letter or email establishes the formal exit date and stated separation grounds.",
+                    suggested_investigation="Review official HR email records or separation letters for written confirmation of departure.",
+                    provenance=PredicateProvenance(source_type="user_assertion", source_ref="User situation narrative")
+                )
+            else:
+                p_sep = MissingPredicateItem(
+                    predicate_id="written_separation_notice",
+                    label="Written Separation Communication",
+                    category=PredicateCategory.NOTICE_RECEIPT,
+                    is_blocking=True,
+                    status=PredicateStatus.MISSING,
+                    source_status=PredicateSourceStatus.UNSTATED,
+                    mode_applicability=[OperationalMode.MODE_1_DOC_ONLY, OperationalMode.MODE_2_DOC_EXTERNAL, OperationalMode.MODE_3_GENERAL_NO_DOC],
+                    why_it_matters="A written separation letter or email establishes the formal exit date and stated separation grounds.",
+                    suggested_investigation="Request or locate the official written separation or relieving letter from the employer.",
+                    semantic_unstated_phrasing=UnstatedPredicateSemantic.format_unstated("a formal written separation notice or relieving letter was issued")
+                )
+
+            # Predicate 2: EPF / UAN Record (FACTUAL_EVENT, Blocking)
+            has_uan_record = any(t in combined_text for t in [
+                "uan", "passbook", "pf passbook", "deducted pf", "pf deducted", "pf account", "epfo portal"
+            ])
+            if has_uan_record:
+                p_uan = MissingPredicateItem(
+                    predicate_id="epf_uan_record",
+                    label="UAN / EPF Passbook Record",
+                    category=PredicateCategory.FACTUAL_EVENT,
+                    is_blocking=True,
+                    status=PredicateStatus.ESTABLISHED,
+                    source_status=PredicateSourceStatus.USER_ASSERTED,
+                    mode_applicability=[OperationalMode.MODE_1_DOC_ONLY, OperationalMode.MODE_2_DOC_EXTERNAL, OperationalMode.MODE_3_GENERAL_NO_DOC],
+                    why_it_matters="Universal Account Number (UAN) passbook entries document employer and employee monthly EPF contributions and current balance.",
+                    suggested_investigation="Check EPFO unified member portal or recent salary slips to confirm registered UAN and contribution deductions.",
+                    provenance=PredicateProvenance(source_type="user_assertion", source_ref="User narrative")
+                )
+            else:
+                p_uan = MissingPredicateItem(
+                    predicate_id="epf_uan_record",
+                    label="UAN / EPF Passbook Record",
+                    category=PredicateCategory.FACTUAL_EVENT,
+                    is_blocking=True,
+                    status=PredicateStatus.MISSING,
+                    source_status=PredicateSourceStatus.UNSTATED,
+                    mode_applicability=[OperationalMode.MODE_1_DOC_ONLY, OperationalMode.MODE_2_DOC_EXTERNAL, OperationalMode.MODE_3_GENERAL_NO_DOC],
+                    why_it_matters="Universal Account Number (UAN) passbook entries document employer and employee monthly EPF contributions and current balance.",
+                    suggested_investigation="Check EPFO unified member portal or recent salary slips to confirm registered UAN and contribution deductions.",
+                    semantic_unstated_phrasing=UnstatedPredicateSemantic.format_unstated("monthly EPF contributions and UAN registration are verified via EPFO passbook records")
+                )
+
+            # Predicate 3: Statutory Establishment Coverage (FACTUAL_EVENT, Non-Blocking)
+            p_cov = MissingPredicateItem(
+                predicate_id="establishment_coverage_threshold",
+                label="Statutory Establishment Coverage (20+ Employees)",
+                category=PredicateCategory.FACTUAL_EVENT,
+                is_blocking=False,
+                status=PredicateStatus.MISSING,
+                source_status=PredicateSourceStatus.UNSTATED,
+                mode_applicability=[OperationalMode.MODE_1_DOC_ONLY, OperationalMode.MODE_2_DOC_EXTERNAL, OperationalMode.MODE_3_GENERAL_NO_DOC],
+                why_it_matters="The Employees' Provident Funds and Miscellaneous Provisions Act, 1952 applies to establishments employing 20 or more persons.",
+                suggested_investigation="Confirm whether the employer meets the 20-employee statutory threshold for mandatory EPFO coverage.",
+                semantic_unstated_phrasing=UnstatedPredicateSemantic.format_unstated("the employer employs 20 or more persons or is voluntarily registered under the EPF Act")
+            )
+
+            # Predicate 4: Full & Final Settlement Statement (CONTRACTUAL_PROVISION, Non-Blocking)
+            p_fnf = MissingPredicateItem(
+                predicate_id="full_and_final_statement",
+                label="Full & Final Settlement Statement",
+                category=PredicateCategory.CONTRACTUAL_PROVISION,
+                is_blocking=False,
+                status=PredicateStatus.MISSING,
+                source_status=PredicateSourceStatus.UNSTATED,
+                mode_applicability=[OperationalMode.MODE_1_DOC_ONLY, OperationalMode.MODE_2_DOC_EXTERNAL, OperationalMode.MODE_3_GENERAL_NO_DOC],
+                why_it_matters="Itemizes settlement of earned wages, encashed leaves, and statutory dues upon separation.",
+                suggested_investigation="Request a written Full & Final settlement breakdown from the employer's HR or payroll department.",
+                semantic_unstated_phrasing=UnstatedPredicateSemantic.format_unstated("a formal Full & Final settlement breakdown has been issued by the employer")
+            )
+
+            all_predicates = [p_sep, p_uan, p_cov, p_fnf]
+            pathways = [
+                ConditionalApplicabilityPathway(
+                    pathway_name="Pathway A: Statutory PF Remittance and Claim",
+                    factual_condition="If the establishment is covered under the EPF Act, 1952 and monthly deductions or contributions were withheld",
+                    applicable_provision="Employees' Provident Funds and Miscellaneous Provisions Act, 1952",
+                    contractual_stipulation="Accumulated provident fund balance belongs to the employee and cannot be forfeited or withheld by the employer upon termination.",
+                    evidence_required_to_confirm=[
+                        "EPFO member passbook showing monthly remittances",
+                        "Salary slips reflecting employee PF deductions",
+                        "Official separation communication or date of exit entry"
+                    ]
+                ),
+                ConditionalApplicabilityPathway(
+                    pathway_name="Pathway B: Contractual Notice Pay and Arrears Settlement",
+                    factual_condition="If separation occurs pursuant to written employment terms or company policy",
+                    applicable_provision="Employment Agreement / Service Rules",
+                    contractual_stipulation="Undisputed salary arrears and contractual dues must be settled within the established exit timeframe.",
+                    evidence_required_to_confirm=[
+                        "Written appointment letter or employment agreement",
+                        "Written termination or resignation communication",
+                        "Final clearance and asset handover receipt"
+                    ]
+                )
+            ]
+
+        # Domain B: Lease Termination & Notice
+        elif any(w in query_lower for w in ["terminate", "leave", "notice", "evict", "vacate", "15 days"]) and not is_explicit_employment:
             heuristic_name = "Lease Termination & Notice Prerequisite Heuristic"
 
             # Predicate 1: Lease Commencement Date (DOCUMENT_DATE, Blocking)
@@ -701,7 +830,7 @@ class MissingInformationEngine:
                 source_status=PredicateSourceStatus.UNSTATED,
                 mode_applicability=[OperationalMode.MODE_1_DOC_ONLY, OperationalMode.MODE_2_DOC_EXTERNAL],
                 why_it_matters="A subsequent written addendum or society rule may modify standard provisions.",
-                suggested_investigation="Check for any written addendums to the lease.",
+                suggested_investigation="Check for any written addendums or amendments to the governing agreement.",
                 semantic_unstated_phrasing=UnstatedPredicateSemantic.format_unstated("any separate written amendment modifies this provision")
             )
             all_predicates = [p_amendment]

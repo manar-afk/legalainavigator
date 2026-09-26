@@ -74,8 +74,9 @@ export default function HomePage() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Diagnostics Drawer
+  // Diagnostics Drawer & Brief Collapsible
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [showBrief, setShowBrief] = useState(false);
   const [copiedBrief, setCopiedBrief] = useState(false);
 
   // Initial Load
@@ -231,15 +232,37 @@ export default function HomePage() {
               Attach contracts, describe the situation, and ask your question. The navigator coordinates textual analysis, comparisons, and statutory rules automatically.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-slate-300 font-medium mr-1 hidden sm:inline">Try a Sample:</span>
+            <button
+              type="button"
+              onClick={() => handleLoadSample('employment_contract.txt')}
+              disabled={isUploading}
+              className="text-xs bg-white/10 hover:bg-white/20 text-white px-2.5 py-1.5 rounded-lg border border-white/20 transition flex items-center gap-1 shadow-sm"
+              title="Load sample Employment Agreement"
+            >
+              <FileCheck className="w-3.5 h-3.5 text-indigo-300" />
+              <span>Employment</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleLoadSample('master_services_agreement.txt')}
+              disabled={isUploading}
+              className="text-xs bg-white/10 hover:bg-white/20 text-white px-2.5 py-1.5 rounded-lg border border-white/20 transition flex items-center gap-1 shadow-sm"
+              title="Load sample Master Services Agreement / NDA"
+            >
+              <FileCheck className="w-3.5 h-3.5 text-emerald-300" />
+              <span>Services / NDA</span>
+            </button>
             <button
               type="button"
               onClick={() => handleLoadSample('residential_lease_agreement.txt')}
               disabled={isUploading}
-              className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg border border-white/20 transition flex items-center gap-1.5"
+              className="text-xs bg-white/10 hover:bg-white/20 text-white px-2.5 py-1.5 rounded-lg border border-white/20 transition flex items-center gap-1 shadow-sm"
+              title="Load sample Residential Lease Agreement"
             >
-              <FileCheck className="w-3.5 h-3.5" />
-              Load Lease Document
+              <FileCheck className="w-3.5 h-3.5 text-amber-300" />
+              <span>Lease</span>
             </button>
           </div>
         </div>
@@ -424,14 +447,14 @@ export default function HomePage() {
         {/* Unified Response Container */}
         {navResponse && (
           <section className="space-y-6">
-            {/* Perspective & Direct Summary Card */}
+            {/* ============================================================ */}
+            {/* 1. WHAT WE FOUND */}
+            {/* ============================================================ */}
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
               <div className="bg-slate-900 text-white px-6 py-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <Compass className="w-5 h-5 text-indigo-400" />
-                  <h3 className="text-sm font-bold tracking-tight text-white">
-                    Legal Information & Practical Translation
-                  </h3>
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">1. What We Found</span>
                 </div>
                 {navResponse.inferred_role && (
                   <span className="text-[11px] font-semibold uppercase px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
@@ -440,126 +463,151 @@ export default function HomePage() {
                 )}
               </div>
 
-              <div className="p-6 space-y-6">
-                {/* Plain-Language Perspective Summary */}
-                <div className="p-4 bg-indigo-50/60 border border-indigo-100 rounded-xl">
-                  <h4 className="text-xs font-bold text-indigo-900 uppercase tracking-wider mb-1">
-                    Summary & Plain-Language Perspective
+              <div className="p-6 space-y-4">
+                <div className="p-4 bg-indigo-50/70 border border-indigo-100 rounded-xl">
+                  <h4 className="text-xs font-bold text-indigo-900 uppercase tracking-wider mb-1.5">
+                    Direct Plain-Language Finding
                   </h4>
                   <p className="text-sm text-slate-800 leading-relaxed font-medium">
                     {navResponse.summary_and_perspective}
                   </p>
                 </div>
-
-                {/* Substantive Contract Meaning */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
-                    Substantive Legal & Contractual Meaning
-                  </h4>
-                  <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                    {navResponse.what_this_means_in_plain_language || navResponse.answer}
-                  </p>
-                </div>
-
-                {/* Why It Matters */}
-                {navResponse.why_it_matters && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-indigo-600" />
-                      Why It Matters to Your Situation
-                    </h4>
-                    <p className="text-xs text-slate-700 leading-relaxed bg-amber-50/50 p-3.5 rounded-xl border border-amber-200/80">
-                      {navResponse.why_it_matters}
-                    </p>
+                {navResponse.answer && navResponse.answer !== navResponse.summary_and_perspective && (
+                  <div className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <span className="font-semibold text-slate-900 block mb-1">Key Takeaway:</span>
+                    {navResponse.answer}
                   </div>
                 )}
+              </div>
+            </div>
 
-                {/* What the Document Says */}
+            {/* ============================================================ */}
+            {/* 2. EVIDENCE / LEGAL BASIS */}
+            {/* ============================================================ */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+              <div className="bg-slate-900 text-white px-6 py-4 flex items-center gap-2.5">
+                <BookOpen className="w-5 h-5 text-emerald-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">2. Evidence & Legal Basis</span>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Contractual / Factual Text */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5 text-indigo-600" />
-                    What the Document Says (Contractual Text)
+                    Agreement Text & Information Basis
                   </h4>
-                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs text-slate-800 leading-relaxed font-mono whitespace-pre-wrap">
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-800 leading-relaxed font-mono whitespace-pre-wrap">
                     {navResponse.what_the_document_says}
                   </div>
                 </div>
 
                 {/* Evidence Citations */}
                 {navResponse.sources && navResponse.sources.length > 0 && (
-                  <div className="pt-2">
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      Retrieved Clause Offsets & Citations
+                    </h4>
                     <EvidenceViewer sources={navResponse.sources} />
+                  </div>
+                )}
+
+                {/* Governing Legal Framework (External Statutory Law) */}
+                {navResponse.governing_legal_framework && navResponse.governing_legal_framework.length > 0 && (
+                  <div className="space-y-3 pt-2 border-t border-slate-100">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Scale className="w-3.5 h-3.5 text-amber-600" />
+                      Authoritative Statutory Framework
+                    </h4>
+                    {navResponse.jurisdiction_note && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 flex items-center gap-2">
+                        <Info className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span>{navResponse.jurisdiction_note}</span>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {navResponse.governing_legal_framework.map((rule, idx) => (
+                        <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-900">{rule.statute}</span>
+                            <span className="text-[10px] font-mono bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded border border-indigo-200">
+                              {rule.section}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-700 leading-relaxed">{rule.summary}</p>
+                          {rule.applicability && (
+                            <p className="text-[11px] text-slate-500 italic border-t border-slate-200 pt-1.5 mt-1.5">
+                              Applicability: {rule.applicability}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cross-Document Comparison (If 2+ docs) */}
+                {navResponse.comparative_analysis && (
+                  <div className="space-y-3 pt-2 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <GitCompare className="w-3.5 h-3.5 text-indigo-600" />
+                        Cross-Document Comparison Analysis
+                      </h4>
+                      <span className="text-[11px] font-semibold text-emerald-600">
+                        {navResponse.comparative_analysis.total_differences_analyzed} Differences Analyzed
+                      </span>
+                    </div>
+                    <DocumentComparisonView comparison={navResponse.comparative_analysis} />
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Comparative Analysis (If 2+ documents) */}
-            {navResponse.comparative_analysis && (
-              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
-                <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
-                  <h3 className="text-sm font-bold tracking-tight flex items-center gap-2">
-                    <GitCompare className="w-4 h-4 text-emerald-400" />
-                    Cross-Document Comparative Analysis
-                  </h3>
-                  <span className="text-[11px] font-semibold text-emerald-300">
-                    {navResponse.comparative_analysis.total_differences_analyzed} Differences Analyzed
-                  </span>
-                </div>
-                <div className="p-6">
-                  <DocumentComparisonView comparison={navResponse.comparative_analysis} />
-                </div>
+            {/* ============================================================ */}
+            {/* 3. WHAT THIS MEANS FOR YOUR SITUATION */}
+            {/* ============================================================ */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+              <div className="bg-slate-900 text-white px-6 py-4 flex items-center gap-2.5">
+                <Scale className="w-5 h-5 text-sky-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-sky-400">3. What This Means For Your Situation</span>
               </div>
-            )}
 
-            {/* Governing Legal Framework (If applicable) */}
-            {navResponse.governing_legal_framework && navResponse.governing_legal_framework.length > 0 && (
-              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
-                <div className="bg-slate-900 text-white px-6 py-4 flex items-center gap-2">
-                  <Scale className="w-4 h-4 text-amber-400" />
-                  <h3 className="text-sm font-bold tracking-tight">
-                    Governing Statutory & Legal Framework
-                  </h3>
+              <div className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Practical Substantive Translation
+                  </h4>
+                  <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    {navResponse.what_this_means_in_plain_language || navResponse.answer}
+                  </p>
                 </div>
-                <div className="p-6 space-y-4">
-                  {navResponse.jurisdiction_note && (
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 flex items-center gap-2">
-                      <Info className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>{navResponse.jurisdiction_note}</span>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {navResponse.governing_legal_framework.map((rule, idx) => (
-                      <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-900">{rule.statute}</span>
-                          <span className="text-[10px] font-mono bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded border border-indigo-200">
-                            {rule.section}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-700 leading-relaxed">{rule.summary}</p>
-                        {rule.applicability && (
-                          <p className="text-[11px] text-slate-500 italic border-t border-slate-200 pt-1.5 mt-1.5">
-                            Applicability: {rule.applicability}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+
+                {navResponse.why_it_matters && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                      Why It Matters to Your Position
+                    </h4>
+                    <p className="text-xs text-slate-700 leading-relaxed bg-amber-50/50 p-4 rounded-xl border border-amber-200/80">
+                      {navResponse.why_it_matters}
+                    </p>
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
 
-            {/* What is Unclear or Missing (Gaps & Inconsistencies) */}
+            {/* ============================================================ */}
+            {/* 4. WHAT IS UNCLEAR OR NEEDS VERIFICATION */}
+            {/* ============================================================ */}
             {(navResponse.what_is_unclear_or_missing || (navResponse.uncertainties && navResponse.uncertainties.length > 0)) && (
               <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
-                <div className="bg-amber-600 text-white px-6 py-4 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  <h3 className="text-sm font-bold tracking-tight">
-                    Factual Gaps & Items Requiring Clarification
-                  </h3>
+                <div className="bg-amber-600 text-white px-6 py-4 flex items-center gap-2.5">
+                  <AlertTriangle className="w-5 h-5 text-amber-200" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-200">4. What Is Unclear or Needs Verification</span>
                 </div>
+
                 <div className="p-6 space-y-4">
                   {navResponse.what_is_unclear_or_missing && (
                     <p className="text-xs text-slate-800 leading-relaxed font-medium bg-amber-50/70 p-3.5 rounded-xl border border-amber-200">
@@ -569,7 +617,7 @@ export default function HomePage() {
                   {navResponse.uncertainties && navResponse.uncertainties.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        Specific Identified Ambiguities
+                        Specific Factual Gaps to Clarify
                       </h4>
                       <ul className="space-y-1.5">
                         {navResponse.uncertainties.map((item, idx) => (
@@ -585,65 +633,87 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Actionable Preparation Checklist */}
-            {navResponse.actionable_checklist && navResponse.actionable_checklist.length > 0 && (
-              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
-                <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
-                  <h3 className="text-sm font-bold tracking-tight flex items-center gap-2">
-                    <CheckSquare className="w-4 h-4 text-indigo-400" />
-                    Actionable Preparation Checklist
-                  </h3>
-                  <span className="text-[11px] font-semibold text-slate-300">
-                    Bounded Next Steps
-                  </span>
+            {/* ============================================================ */}
+            {/* 5. PREPARE FOR THE NEXT STEP */}
+            {/* ============================================================ */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+              <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <CheckSquare className="w-5 h-5 text-indigo-400" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">5. Prepare For The Next Step</span>
                 </div>
-                <div className="p-6">
-                  <ul className="space-y-2.5">
-                    {navResponse.actionable_checklist.map((step, idx) => (
-                      <li key={idx} className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span className="leading-relaxed">{step}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <span className="text-[11px] font-semibold text-slate-300">
+                  Actionable Checklist
+                </span>
               </div>
-            )}
 
-            {/* Consultation Brief Export */}
-            {navResponse.consultation_brief_markdown && (
-              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
-                <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
-                  <h3 className="text-sm font-bold tracking-tight flex items-center gap-2">
-                    <ClipboardList className="w-4 h-4 text-indigo-400" />
-                    Professional Consultation Brief
-                  </h3>
-                  <div className="flex items-center gap-2">
+              <div className="p-6 space-y-6">
+                {/* Actionable Preparation Checklist */}
+                {navResponse.actionable_checklist && navResponse.actionable_checklist.length > 0 && (
+                  <div className="space-y-2.5">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Preparation Tasks for Legal Consultation
+                    </h4>
+                    <ul className="space-y-2.5">
+                      {navResponse.actionable_checklist.map((step, idx) => (
+                        <li key={idx} className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                          <span className="leading-relaxed">{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Collapsible Consultation Brief */}
+                {navResponse.consultation_brief_markdown && (
+                  <div className="pt-2 border-t border-slate-100">
                     <button
                       type="button"
-                      onClick={handleCopyBrief}
-                      className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg border border-white/20 transition flex items-center gap-1.5"
+                      onClick={() => setShowBrief(!showBrief)}
+                      className="w-full px-4 py-3 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-950 font-semibold rounded-xl border border-indigo-200/80 text-xs flex items-center justify-between transition shadow-sm"
                     >
-                      {copiedBrief ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedBrief ? 'Copied' : 'Copy Brief'}</span>
+                      <div className="flex items-center gap-2">
+                        <ClipboardList className="w-4 h-4 text-indigo-600" />
+                        <span>View Professional Consultation Brief</span>
+                      </div>
+                      {showBrief ? <ChevronUp className="w-4 h-4 text-indigo-600" /> : <ChevronDown className="w-4 h-4 text-indigo-600" />}
                     </button>
-                    <button
-                      type="button"
-                      onClick={handleDownloadBrief}
-                      className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg border border-white/20 transition flex items-center gap-1.5"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Download .md</span>
-                    </button>
+
+                    {showBrief && (
+                      <div className="mt-3 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-medium text-slate-500">
+                            Structured factual summary and clause index for your attorney
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={handleCopyBrief}
+                              className="text-xs bg-white hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 transition flex items-center gap-1.5 shadow-sm"
+                            >
+                              {copiedBrief ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                              <span>{copiedBrief ? 'Copied' : 'Copy Brief'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleDownloadBrief}
+                              className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm font-medium"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Download .md</span>
+                            </button>
+                          </div>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border border-slate-200 text-xs text-slate-800 font-mono whitespace-pre-wrap max-h-80 overflow-y-auto leading-relaxed">
+                          {navResponse.consultation_brief_markdown}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div className="p-6">
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-800 font-mono whitespace-pre-wrap max-h-80 overflow-y-auto leading-relaxed">
-                    {navResponse.consultation_brief_markdown}
-                  </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Collapsible Evidence & System Diagnostics Drawer */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
